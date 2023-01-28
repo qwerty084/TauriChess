@@ -4,22 +4,37 @@ import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
 import { invoke } from '@tauri-apps/api/tauri';
 import AlertDialog from '../ui/AlertDialog.vue';
 import EngineTable from './Layout/EngineTable.vue';
-import { XMarkIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
+import type { NotificationType } from '@/types/Types';
 
-invoke<string>('add_engine', {
-  name: 'Stockfish 15',
-  path: '/Downloads/stockfish',
-}).then((message) => console.log(message));
+async function fetchEngines() {
+  engines.value = await invoke('get_engines');
+}
 
-invoke('get_engines').then((message) => console.log(message));
+async function addEngine(name: string, path: string): Promise<boolean> {
+  return await invoke<boolean>('add_engine', {
+    name,
+    path,
+  });
+}
 
-type NotificationType = 'Success' | 'Error' | 'Warning';
+async function editEngine(
+  id: string,
+  name: string,
+  path: string
+): Promise<boolean> {
+  return await invoke<boolean>('edit_engine', {
+    id,
+    name,
+    path,
+  });
+}
 
 const engines = ref<Engine[]>([]);
 const enginePath = ref('');
 const engineName = ref('');
 const engineId = ref('');
 const showNotificationWindow = ref(false);
+const isAdding = ref(false);
 const notificationType = ref<NotificationType>();
 const notificationTitle = ref('');
 const notificationDescription = ref('');
@@ -28,18 +43,13 @@ const isDeleting = ref(false);
 const NotificationDialog = defineAsyncComponent(
   () => import('../ui/NotificationDialog.vue')
 );
+const AddDialog = defineAsyncComponent(() => import('../ui/InputDialog.vue'));
 
-// onMounted(() => {
-//   fetchEngines();
-// });
+onMounted(() => {
+  fetchEngines();
+});
 
-const heading = computed(() => (isEditing.value ? 'Edit' : 'Add') + ' Engine');
-
-// function fetchEngines() {
-//   GetEngines().then((registeredEngines) => {
-//     engines.value = registeredEngines as unknown as Engine[]; // fix this :)
-//   });
-// }
+const submitButtonText = computed(() => (isEditing.value ? 'Edit' : 'Add'));
 
 function showNotification(
   type: NotificationType,
@@ -56,14 +66,13 @@ function showNotification(
   }, 5000);
 }
 
-// async function handleDialogClose(confirmDeletion: boolean) {
-//   if (confirmDeletion) {
-//     await RemoveEngine(engineId.value);
-//     engineId.value = '';
-//     fetchEngines();
-//   }
-//   isDeleting.value = false;
-// }
+async function handleDialogClose(confirmDeletion: boolean) {
+  if (confirmDeletion) {
+    engineId.value = '';
+    fetchEngines();
+  }
+  isDeleting.value = false;
+}
 
 function clearInputs() {
   engineName.value = '';
@@ -71,94 +80,129 @@ function clearInputs() {
   engineId.value = '';
 }
 
-// async function handleAddEngine() {
-//   let success: boolean;
-//   if (isEditing.value) {
-//     success = await EditEngine(
-//       engineId.value,
-//       engineName.value,
-//       enginePath.value
-//     );
-//   } else {
-//     success = await AddEngine(engineName.value, enginePath.value);
-//   }
+async function handleAddEngine() {
+  let success: boolean;
+  if (isEditing.value) {
+    success = await editEngine(
+      engineId.value,
+      engineName.value,
+      enginePath.value
+    );
+  } else {
+    success = await addEngine(engineName.value, enginePath.value);
+  }
+  console.log(success);
+  fetchEngines();
+  clearInputs();
+  if (isEditing.value) {
+    showNotification('Success', 'Engine successfully edited.', '');
+  } else {
+    showNotification('Success', 'Engine has been added.', '');
+  }
 
-//   fetchEngines();
-//   clearInputs();
-//   if (isEditing.value) {
-//     showNotification('Success', 'Engine successfully edited.', '');
-//   } else {
-//     showNotification('Success', 'Engine has been added.', '');
-//   }
-
-//   isEditing.value = false;
-// }
+  isAdding.value = false;
+  isEditing.value = false;
+}
 
 function handleRemoveEngine(id: string) {
   isDeleting.value = true;
   engineId.value = id;
+  invoke('delete_engine', { id });
+  // TODO: show message depending on result
+  fetchEngines();
 }
 
-function handleEditEngine(id: string, name: string, path: string) {
+function handleEditEngine(id: string) {
   isEditing.value = true;
-  engineId.value = id;
-  engineName.value = name;
-  enginePath.value = path;
+  isAdding.value = true;
+  const engineToEdit = engines.value.filter((engine) => engine.id === id)[0];
+  engineId.value = engineToEdit.id;
+  engineName.value = engineToEdit.name;
+  enginePath.value = engineToEdit.path;
 }
 
 function cancelEditing() {
+  isAdding.value = false;
   isEditing.value = false;
   clearInputs();
 }
 </script>
 
 <template>
-  <EngineTable :engines="engines" @delete-engine="handleRemoveEngine" />
-  <div class="max-w-md">
-    <!-- <form @submit.prevent="handleAddEngine">
-      <h3>{{ heading }}</h3>
-      <div>
-        <label for="engine-path" class="block text-sm font-medium text-gray-700"
-          >Engine Name</label
-        >
-        <div class="mt-1">
-          <input
-            id="engine-name"
-            v-model="engineName"
-            type="text"
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          />
+  <AddDialog v-if="isAdding" :open="isAdding" @input-closed="cancelEditing">
+    <template #title>Add Engine</template>
+    <template #form>
+      <form @submit.prevent="handleAddEngine">
+        <div class="mb-2">
+          <label
+            for="engine-name"
+            class="block text-sm font-medium text-gray-700"
+            >Name</label
+          >
+          <div class="mt-1">
+            <input
+              id="engine-name"
+              v-model="engineName"
+              type="text"
+              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+          </div>
         </div>
-        <label for="engine-path" class="block text-sm font-medium text-gray-700"
-          >Engine Path</label
-        >
-        <div class="mt-1">
-          <input
-            id="engine-path"
-            v-model="enginePath"
-            type="text"
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          />
+        <div>
+          <label for="path" class="block text-sm font-medium text-gray-700"
+            >Path</label
+          >
+          <div class="mt-1">
+            <input
+              id="path"
+              v-model="enginePath"
+              type="text"
+              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+          </div>
         </div>
+        <div class="mt-5 sm:mt-6">
+          <button
+            type="submit"
+            class="inline-flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:text-sm"
+          >
+            {{ submitButtonText }}
+          </button>
+        </div>
+      </form>
+    </template>
+  </AddDialog>
+  <div class="px-4 sm:px-6 lg:px-8">
+    <div class="sm:flex sm:items-center">
+      <div class="sm:flex-auto">
+        <h1 class="text-xl font-semibold text-gray-900">Engines</h1>
+        <p class="mt-2 text-sm text-gray-700">
+          A list of all your configured engines.
+        </p>
       </div>
-      <button type="submit" class="button">
-        {{ heading }}
-      </button>
-      <button
-        v-show="isEditing"
-        type="button"
-        class="button"
-        @click="cancelEditing"
-      >
-        Cancel Editing
-      </button>
-    </form>
+      <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto"
+          @click="isAdding = true"
+        >
+          Add Engine
+        </button>
+      </div>
+    </div>
+  </div>
+  <EngineTable
+    :engines="engines"
+    @delete-engine="handleRemoveEngine"
+    @edit-engine="handleEditEngine"
+  />
+  <div class="max-w-md">
     <AlertDialog v-if="isDeleting" @dialog-closed="handleDialogClose"
       ><template #title>Delete Engine</template
       ><template #description
         >Do you really want to delete this engine?</template
       >
-    </AlertDialog> -->
+    </AlertDialog>
     <NotificationDialog
       v-if="showNotificationWindow"
       :notification-type="notificationType"
