@@ -1,5 +1,8 @@
-<script lang="ts" setup></script>
+<script setup lang="ts">
+import { TheChessboard } from 'vue3-chessboard';
+import 'vue3-chessboard/style.css';
+</script>
 
 <template>
-  <h2>Hello from Play View</h2>
+  <TheChessboard />
 </template>
