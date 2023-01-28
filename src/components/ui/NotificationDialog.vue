@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { onActivated, onMounted, ref } from 'vue';
+import { ref } from 'vue';
 import { CheckCircleIcon } from '@heroicons/vue/24/outline';
 import { XMarkIcon, ExclamationCircleIcon } from '@heroicons/vue/20/solid';
+import type { NotificationType } from '@/types/Types';
 
 const show = ref(true);
-
-type NotificationType = 'Success' | 'Error' | 'Warning';
 
 defineProps({
   notificationType: {
@@ -13,17 +12,6 @@ defineProps({
     default: 'Success',
   },
 });
-
-onActivated(() => {
-  console.log('ACTIVATED');
-});
-
-// onMounted(() => {
-//   // hide notification after 5 seconds
-//   setTimeout(() => {
-//     show.value = false;
-//   }, 5000);
-// });
 </script>
 
 <template>
