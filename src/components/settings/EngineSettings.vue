@@ -1,34 +1,12 @@
 <script setup lang="ts">
 import { Engine } from '@/types/Engine';
 import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
-import { invoke } from '@tauri-apps/api/tauri';
 import AlertDialog from '../ui/AlertDialog.vue';
 import EngineTable from './Layout/EngineTable.vue';
 import type { NotificationType } from '@/types/Types';
+import Database from 'tauri-plugin-sql-api';
 
-async function fetchEngines() {
-  engines.value = await invoke('get_engines');
-}
-
-async function addEngine(name: string, path: string): Promise<boolean> {
-  return await invoke<boolean>('add_engine', {
-    name,
-    path,
-  });
-}
-
-async function editEngine(
-  id: string,
-  name: string,
-  path: string
-): Promise<boolean> {
-  return await invoke<boolean>('edit_engine', {
-    id,
-    name,
-    path,
-  });
-}
-
+const engineDb = ref<Database | null>(null);
 const engines = ref<Engine[]>([]);
 const enginePath = ref('');
 const engineName = ref('');
@@ -45,9 +23,61 @@ const NotificationDialog = defineAsyncComponent(
 );
 const AddDialog = defineAsyncComponent(() => import('../ui/InputDialog.vue'));
 
-onMounted(() => {
+async function fetchEngines() {
+  engines.value =
+    (await engineDb.value?.select(
+      'SELECT id, engine_name as name, engine_path as path, is_default as isDefault FROM engines'
+    )) ?? [];
+}
+
+async function addEngine(name: string, path: string): Promise<boolean> {
+  const result = await engineDb.value?.execute(
+    'INSERT INTO engines VALUES(NULL, $1, $2, 0)',
+    [name, path]
+  );
+
+  if (result?.rowsAffected === 1) {
+    return true;
+  }
+
+  return false;
+}
+
+async function handleSetDefaultEngine(id: string) {
+  await engineDb.value?.execute('UPDATE engines SET is_default = 0');
+  const result = await engineDb.value?.execute(
+    'UPDATE engines SET is_default = 1 WHERE id = $1',
+    [id]
+  );
+  console.log(result);
+  fetchEngines();
+}
+
+async function editEngine(
+  id: string,
+  name: string,
+  path: string
+): Promise<boolean> {
+  const result = await engineDb.value?.execute(
+    'UPDATE engines SET engine_name = $1, engine_path = $2, is_default = 0 WHERE id = $3',
+    [name, path, id]
+  );
+
+  if (result?.rowsAffected === 1) {
+    return true;
+  }
+
+  return false;
+}
+
+onMounted(async () => {
+  await loadDb();
   fetchEngines();
 });
+
+async function loadDb() {
+  engineDb.value = await Database.load('sqlite:engines.db');
+}
 
 const submitButtonText = computed(() => (isEditing.value ? 'Edit' : 'Add'));
 
@@ -56,6 +86,10 @@ function showNotification(
   title: string,
   description: string
 ) {
+  // hide current window if there is a new notification
+  if (showNotificationWindow.value) {
+    showNotificationWindow.value = false;
+  }
   showNotificationWindow.value = true;
   notificationType.value = type;
   notificationTitle.value = title;
@@ -63,11 +97,21 @@ function showNotification(
 
   setTimeout(() => {
     showNotificationWindow.value = false;
-  }, 5000);
+  }, 3500);
 }
 
 async function handleDialogClose(confirmDeletion: boolean) {
   if (confirmDeletion) {
+    const result = await engineDb.value?.execute(
+      'DELETE FROM engines WHERE id = $1',
+      [engineId.value]
+    );
+
+    if (result?.rowsAffected === 1) {
+      showNotification('Success', 'Engine has been deleted', '');
+    } else {
+      showNotification('Error', 'Failed to delete engine', 'Please try again.');
+    }
     engineId.value = '';
     fetchEngines();
   }
@@ -91,25 +135,30 @@ async function handleAddEngine() {
   } else {
     success = await addEngine(engineName.value, enginePath.value);
   }
-  console.log(success);
+
   fetchEngines();
   clearInputs();
   if (isEditing.value) {
-    showNotification('Success', 'Engine successfully edited.', '');
+    if (success) {
+      showNotification('Success', 'Engine successfully edited.', '');
+    } else {
+      showNotification('Error', 'Failed to edit engine.', 'Please try again.');
+    }
   } else {
-    showNotification('Success', 'Engine has been added.', '');
+    if (success) {
+      showNotification('Success', 'Engine has been added.', '');
+    } else {
+      showNotification('Error', 'Failed to add engine', 'Please try again.');
+    }
   }
 
   isAdding.value = false;
   isEditing.value = false;
 }
 
-function handleRemoveEngine(id: string) {
+async function handleRemoveEngine(id: string) {
   isDeleting.value = true;
   engineId.value = id;
-  invoke('delete_engine', { id });
-  // TODO: show message depending on result
-  fetchEngines();
 }
 
 function handleEditEngine(id: string) {
@@ -195,6 +244,7 @@ function cancelEditing() {
     :engines="engines"
     @delete-engine="handleRemoveEngine"
     @edit-engine="handleEditEngine"
+    @set-default-engine="handleSetDefaultEngine"
   />
   <div class="max-w-md">
     <AlertDialog v-if="isDeleting" @dialog-closed="handleDialogClose"
