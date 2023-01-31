@@ -26,14 +26,18 @@ const AddDialog = defineAsyncComponent(() => import('../ui/InputDialog.vue'));
 async function fetchEngines() {
   engines.value =
     (await engineDb.value?.select(
-      'SELECT id, engine_name as name, engine_path as path, is_default as isDefault FROM engines'
+      'SELECT id, name, path, isDefault FROM engines'
     )) ?? [];
 }
 
-async function addEngine(name: string, path: string): Promise<boolean> {
+async function addEngine(
+  id: string,
+  name: string,
+  path: string
+): Promise<boolean> {
   const result = await engineDb.value?.execute(
-    'INSERT INTO engines VALUES(NULL, $1, $2, 0)',
-    [name, path]
+    'INSERT INTO engines VALUES($1, $2, $3, 0)',
+    [id, name, path]
   );
 
   if (result?.rowsAffected === 1) {
@@ -44,9 +48,9 @@ async function addEngine(name: string, path: string): Promise<boolean> {
 }
 
 async function handleSetDefaultEngine(id: string) {
-  await engineDb.value?.execute('UPDATE engines SET is_default = 0');
+  await engineDb.value?.execute('UPDATE engines SET isDefault = 0');
   const result = await engineDb.value?.execute(
-    'UPDATE engines SET is_default = 1 WHERE id = $1',
+    'UPDATE engines SET isDefault = 1 WHERE id = $1',
     [id]
   );
   console.log(result);
@@ -59,7 +63,7 @@ async function editEngine(
   path: string
 ): Promise<boolean> {
   const result = await engineDb.value?.execute(
-    'UPDATE engines SET engine_name = $1, engine_path = $2, is_default = 0 WHERE id = $3',
+    'UPDATE engines SET name = $1, path = $2, isDefault = 0 WHERE id = $3',
     [name, path, id]
   );
 
@@ -76,7 +80,13 @@ onMounted(async () => {
 });
 
 async function loadDb() {
-  engineDb.value = await Database.load('sqlite:engines.db');
+  engineDb.value = await Database.load('sqlite:tauri_chess.db');
+  await engineDb.value.execute(`CREATE TABLE IF NOT EXISTS engines (
+    id VARCHAR(36) NOT NULL,
+    name VARCHAR(200) NOT NULL,
+    path VARCHAR(200) NOT NULL,
+    isDefault INTEGER NOT NULL DEFAULT 0
+  );`);
 }
 
 const submitButtonText = computed(() => (isEditing.value ? 'Edit' : 'Add'));
@@ -133,7 +143,11 @@ async function handleAddEngine() {
       enginePath.value
     );
   } else {
-    success = await addEngine(engineName.value, enginePath.value);
+    success = await addEngine(
+      crypto.randomUUID(),
+      engineName.value,
+      enginePath.value
+    );
   }
 
   fetchEngines();
