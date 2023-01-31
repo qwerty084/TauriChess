@@ -3,19 +3,11 @@
     windows_subsystem = "windows"
 )]
 
-use tauri_plugin_sql::{Migration, MigrationKind, TauriSql};
+use tauri_plugin_sql::TauriSql;
 
 fn main() {
     tauri::Builder::default()
-        .plugin(TauriSql::default().add_migrations(
-            "sqlite:tauri_chess.db",
-            vec![Migration {
-                version: 1,
-                description: "create engines table",
-                sql: include_str!("../migrations/1.sql"),
-                kind: MigrationKind::Up,
-            }],
-        ))
+        .plugin(TauriSql::default())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
