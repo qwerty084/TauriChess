@@ -12,11 +12,9 @@
   },
   "tauri": {
     "allowlist": {
-      "fs": {
-        "writeFile": true,
-        "removeFile": true,
-        "readFile": true,
-        "scope": ["$RESOURCE/*"]
+      "http": {
+        "request": true,
+        "scope": ["https://lichess.org/api/*", "https://api.chess.com/pub/*"]
       },
       "all": false,
       "shell": {
