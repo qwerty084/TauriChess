@@ -6,6 +6,6 @@ updates:
       interval: 'daily'
 
   - package-ecosystem: 'cargo'
-      directory: '/src-tauri'
-      schedule:
-        interval: 'daily'
+    directory: '/src-tauri'
+    schedule:
+      interval: 'daily'
