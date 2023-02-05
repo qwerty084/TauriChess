@@ -31,7 +31,7 @@
     "tauri-plugin-sql-api": "github:tauri-apps/tauri-plugin-sql",
     "vue": "^3.2.47",
     "vue-router": "^4.1.6",
-    "vue3-chessboard": "^1.0.0-beta.1"
+    "vue3-chessboard": "^1.0.0"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.2.0",
