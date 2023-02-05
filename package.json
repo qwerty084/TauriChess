@@ -29,7 +29,7 @@
     "@tauri-apps/api": "^1.2.0",
     "pinia": "^2.0.30",
     "tauri-plugin-sql-api": "github:tauri-apps/tauri-plugin-sql",
-    "vue": "^3.2.45",
+    "vue": "^3.2.47",
     "vue-router": "^4.1.6",
     "vue3-chessboard": "^1.0.0-beta.1"
   },
