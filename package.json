@@ -27,6 +27,7 @@
     "@headlessui/vue": "^1.7.8",
     "@heroicons/vue": "^2.0.14",
     "@tauri-apps/api": "^1.2.0",
+    "pinia": "^2.0.30",
     "tauri-plugin-sql-api": "github:tauri-apps/tauri-plugin-sql",
     "vue": "^3.2.45",
     "vue-router": "^4.1.6",

@@ -4,9 +4,11 @@ import { defineAsyncComponent, ref } from 'vue';
 import { getClient } from '@tauri-apps/api/http';
 import { CheckCircleIcon } from '@heroicons/vue/24/outline';
 import { NotificationType } from '@/types/Types';
+import { useLichessUser } from '@/stores/LichessStore';
+import LichessHistory from './LichessHistory.vue';
 
 const username = ref('');
-const userData = ref<LichessUser | null>(null);
+const lichessUser = useLichessUser();
 const showDialog = ref(false);
 const notificationType = ref<NotificationType>();
 const notificationTitle = ref('');
@@ -25,7 +27,7 @@ async function fetchProfile() {
   );
 
   if (res.ok) {
-    userData.value = res.data;
+    lichessUser.user = res.data;
     notificationType.value = 'Success';
     notificationTitle.value = 'Your Lichess account has been added!';
   } else {
@@ -66,7 +68,7 @@ async function fetchProfile() {
             class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3"
           >
             <CheckCircleIcon
-              v-if="userData != null"
+              v-if="lichessUser.user != null"
               class="w-6 h-6 text-green-600 block"
             />
           </div>
@@ -88,14 +90,14 @@ async function fetchProfile() {
       </button>
     </div>
     <div
-      v-if="userData"
+      v-if="lichessUser.user != null"
       class="divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow"
     >
       <div class="px-4 py-5 sm:px-6">
-        <h2>{{ userData.username }}</h2>
+        <h2>{{ lichessUser.user.username }}</h2>
       </div>
       <div class="px-4 py-5 sm:p-6">
-        <!-- Content goes here -->
+        <LichessHistory />
       </div>
     </div>
   </div>
