@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import SettingsTab from '@/components/settings/Layout/SettingsTab.vue';
 import SettingsWrapper from '@/components/settings/Layout/SettingsWrapper.vue';
-import ChessComProfile from '@/components/profile/ChessComProfile.vue';
+import ChessProfile from '@/components/profile/ChessProfile.vue';
 import LichessProfile from '@/components/profile/LichessProfile.vue';
 </script>
 
@@ -18,7 +18,7 @@ import LichessProfile from '@/components/profile/LichessProfile.vue';
       <div>
         <SettingsWrapper>
           <SettingsTab title="Lichess"><LichessProfile /></SettingsTab>
-          <SettingsTab title="Chess.com"><ChessComProfile /></SettingsTab>
+          <SettingsTab title="Chess.com"><ChessProfile /></SettingsTab>
         </SettingsWrapper>
       </div>
     </div>

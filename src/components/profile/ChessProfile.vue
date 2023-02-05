@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { defineAsyncComponent, ref } from 'vue';
-import type { ChessComUser } from '@/types/ChessComApi';
-import { getClient } from '@tauri-apps/api/http';
+import type { ChessUser } from '@/types/ChessApi';
+import { getClient, type Client } from '@tauri-apps/api/http';
 import { CheckCircleIcon } from '@heroicons/vue/24/outline';
 import { NotificationType } from '@/types/Types';
+import ChessHistory from './ChessHistory.vue';
+import { useChessUser } from '@/stores/ChessStore';
 
 const username = ref('');
-const userData = ref<ChessComUser | null>(null);
+const user = useChessUser();
 const showDialog = ref(false);
+const httpClient = ref<Client | null>(null);
 const notificationType = ref<NotificationType>();
 const notificationTitle = ref('');
 const NotificationDialog = defineAsyncComponent(
@@ -19,13 +22,13 @@ async function fetchProfile() {
     console.warn('Username is empty');
   }
 
-  const client = await getClient();
-  const res = await client.get<ChessComUser>(
+  httpClient.value = await getClient();
+  const res = await httpClient.value.get<ChessUser>(
     `https://api.chess.com/pub/player/${username.value}`
   );
 
   if (res.ok) {
-    userData.value = res.data;
+    user.user = res.data;
     notificationType.value = 'Success';
     notificationTitle.value = 'Your Chess.com account has been added!';
   } else {
@@ -66,7 +69,7 @@ async function fetchProfile() {
             class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3"
           >
             <CheckCircleIcon
-              v-if="userData != null"
+              v-if="user.user != null"
               class="w-6 h-6 text-green-600 block"
             />
           </div>
@@ -88,14 +91,14 @@ async function fetchProfile() {
       </button>
     </div>
     <div
-      v-if="userData"
+      v-if="user.user != null"
       class="divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow"
     >
       <div class="px-4 py-5 sm:px-6">
-        <h2>{{ userData.username }}</h2>
+        <h2>{{ user.user.username }}</h2>
       </div>
       <div class="px-4 py-5 sm:p-6">
-        <!-- Content goes here -->
+        <ChessHistory />
       </div>
     </div>
   </div>

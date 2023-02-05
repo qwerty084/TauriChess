@@ -1,3 +1,7 @@
+export interface User {
+  user: LichessUser | null;
+}
+
 export interface LichessUser {
   id: string;
   username: string;
@@ -131,4 +135,39 @@ export interface LichessUser {
     import: number;
     me: number;
   };
+}
+
+export interface LichessGame {
+  clock: {
+    initial: number;
+    increment: number;
+    totalTime: number;
+  };
+  createdAt: number;
+  id: string;
+  lastMoveAt: number;
+  moves: string;
+  perf: string;
+  pgn: string;
+  players: {
+    white: {
+      user: {
+        name: string;
+        id: string;
+      };
+      rating: number;
+    };
+    black: {
+      user: {
+        name: string;
+        id: string;
+      };
+      rating: number;
+    };
+  };
+  rated: boolean;
+  speed: string;
+  status: string;
+  variant: string;
+  winner: string;
 }
