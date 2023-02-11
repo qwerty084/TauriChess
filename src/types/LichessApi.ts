@@ -150,15 +150,15 @@ export interface LichessGame {
   perf: string;
   pgn: string;
   players: {
-    white: {
-      user: {
+    white?: {
+      user?: {
         name: string;
         id: string;
       };
       rating: number;
     };
-    black: {
-      user: {
+    black?: {
+      user?: {
         name: string;
         id: string;
       };

@@ -7,7 +7,7 @@ import LichessProfile from '@/components/profile/LichessProfile.vue';
 
 <template>
   <div class="flex-1 xl:overflow-y-auto">
-    <div class="mx-auto max-w-3xl py-10 px-4 sm:px-6 lg:py-12 lg:px-8">
+    <div class="mx-auto py-10 px-4 lg:py-12">
       <h2 class="text-3xl font-bold tracking-tight text-blue-gray-900 mb-2">
         Profile
       </h2>
