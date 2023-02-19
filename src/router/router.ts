@@ -13,8 +13,8 @@ const router = createRouter({
       component: () => import('@/views/SettingsView.vue'),
     },
     {
-      path: '/play',
-      component: () => import('@/views/PlayView.vue'),
+      path: '/board',
+      component: () => import('@/views/BoardView.vue'),
     },
     {
       path: '/study',

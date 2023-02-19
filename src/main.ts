@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import App from './App.vue';
 import router from './router/router';
+import 'vue3-chessboard/style.css';
 import '@/assets/index.css';
 
 const pinia = createPinia();

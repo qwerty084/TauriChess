@@ -15,8 +15,9 @@ tauri-build = { version = "1.2", features = [] }
 
 [dependencies]
 serde_json = "1.0"
+csv = "1.1"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.2", features = ["http-request", "shell-open"] }
+tauri = { version = "1.2", features = ["http-request", "shell-execute", "shell-open", "shell-sidecar"] }
 
 [dependencies.tauri-plugin-sql]
 git = "https://github.com/tauri-apps/tauri-plugin-sql"
