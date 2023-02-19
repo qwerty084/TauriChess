@@ -9,15 +9,17 @@ const moves = ref<string[]>([]);
 const sf = ref<Stockfish>();
 const opening = ref('');
 
-async function move(move: MoveEvent) {
+function move(move: MoveEvent) {
   if (move?.lan) {
     moves.value.push(move?.lan);
     sf.value?.startEngine(moves.value);
   }
 
-  opening.value = await invoke('get_opening_for_pgn', {
-    inputPgn: boardAPI.value?.getPgn() ?? '',
-  });
+  if (moves.value.length < 8) {
+    invoke<string>('get_opening_for_pgn', {
+      inputPgn: boardAPI.value?.getPgn() ?? '',
+    }).then((val) => (opening.value = val));
+  }
 }
 
 async function startStockfish() {
