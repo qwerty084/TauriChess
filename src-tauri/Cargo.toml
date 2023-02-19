@@ -1,29 +1,23 @@
 [package]
 name = "tauri-chess"
 version = "0.0.0"
-description = "A Tauri App"
-authors = ["you"]
-license = ""
-repository = ""
+description = "TauriChess - A cross-platform chess application"
+authors = ["Luca Hendrik Helms"]
+license = "GPL-3.0"
+repository = "https://github.com/qwerty084/TauriChess"
 edition = "2021"
 rust-version = "1.57"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1.2", features = [] }
+tauri-build = { version = "1.2.1", features = [] }
 
 [dependencies]
+csv = "1.2"
 serde_json = "1.0"
-csv = "1.1"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.2", features = ["http-request", "shell-execute", "shell-open", "shell-sidecar"] }
-
-[dependencies.tauri-plugin-sql]
-git = "https://github.com/tauri-apps/tauri-plugin-sql"
-# tag = "v0.1.0"
-branch = "release"
-features = ["sqlite"]
+tauri = { version = "1.2.4", features = ["http-request", "shell-execute", "shell-open", "shell-sidecar"] }
 
 [features]
 # by default Tauri runs in production mode
