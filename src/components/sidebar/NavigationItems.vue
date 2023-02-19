@@ -11,7 +11,7 @@ import { RouterLink, useRoute } from 'vue-router';
 const route = useRoute();
 const navigation = ref([
   { name: 'Home', href: '/', icon: HomeIcon, current: true },
-  { name: 'Play', href: '/play', icon: PlayIcon, current: false },
+  { name: 'Play', href: '/board', icon: PlayIcon, current: false },
   { name: 'Study', href: '/study', icon: AcademicCapIcon, current: false },
   { name: 'Settings', href: '/settings', icon: CogIcon, current: false },
 ]);
