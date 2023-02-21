@@ -3,22 +3,32 @@ import { ref } from 'vue';
 import { TheChessboard, type BoardApi, type MoveEvent } from 'vue3-chessboard';
 import { Stockfish } from '@/classes/stockfish';
 import { invoke } from '@tauri-apps/api/tauri';
+import { useUser } from '@/stores/UserStore';
 
 const boardAPI = ref<BoardApi>();
 const moves = ref<string[]>([]);
 const sf = ref<Stockfish>();
 const opening = ref('');
+const user = useUser();
 
-function move(move: MoveEvent) {
+async function move(move: MoveEvent) {
   if (move?.lan) {
     moves.value.push(move?.lan);
     sf.value?.startEngine(moves.value);
   }
 
   if (moves.value.length < 8) {
-    invoke<string>('get_opening_for_pgn', {
-      inputPgn: boardAPI.value?.getPgn() ?? '',
-    }).then((val) => (opening.value = val));
+    try {
+      opening.value = await invoke<string>('get_opening', {
+        inputPgn: boardAPI.value?.getPgn(),
+      });
+    } catch {
+      if (!user.hasInternetConnection) return;
+      const res = await boardAPI.value?.getOpeningName();
+      if (res != null) {
+        opening.value = res;
+      }
+    }
   }
 }
 

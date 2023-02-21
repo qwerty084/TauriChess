@@ -4,8 +4,14 @@ import { Bars3Icon } from '@heroicons/vue/24/outline';
 import { RouterView } from 'vue-router';
 import DesktopBar from '@/components/sidebar/DesktopBar.vue';
 import MobileBar from '@/components/sidebar/MobileBar.vue';
+import { useUser } from './stores/UserStore';
 
 const sidebarOpen = ref(false);
+const user = useUser();
+
+// keep track of connection state
+window.addEventListener('offline', () => (user.hasInternetConnection = false));
+window.addEventListener('online', () => (user.hasInternetConnection = true));
 </script>
 
 <template>
