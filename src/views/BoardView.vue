@@ -1,23 +1,41 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { TheChessboard, type BoardApi, type MoveEvent } from 'vue3-chessboard';
+import {
+  BoardConfig,
+  SquareKey,
+  TheChessboard,
+  type BoardApi,
+  type MoveEvent,
+} from 'vue3-chessboard';
 import { Stockfish } from '@/classes/stockfish';
 import { invoke } from '@tauri-apps/api/tauri';
 import { useUser } from '@/stores/UserStore';
 
 const boardAPI = ref<BoardApi>();
-const moves = ref<string[]>([]);
 const sf = ref<Stockfish>();
 const opening = ref('');
 const user = useUser();
+const boardConfig: BoardConfig = {
+  events: {
+    select: () => {
+      if (sf.value?.bestMove) {
+        boardAPI.value?.drawMove(
+          sf.value?.bestMove.slice(0, 2) as SquareKey,
+          sf.value?.bestMove.slice(2, 4) as SquareKey,
+          'paleBlue'
+        );
+      }
+    },
+  },
+};
 
-async function move(move: MoveEvent) {
-  if (move?.lan) {
-    moves.value.push(move?.lan);
-    sf.value?.startEngine(moves.value);
-  }
+async function move() {
+  // add small delay to keep gui responsive
+  setTimeout(() => {
+    sf.value?.startEngine();
+  }, 150);
 
-  if (moves.value.length < 8) {
+  if (boardAPI.value && boardAPI.value?.getCurrentTurnNumber() < 8) {
     try {
       opening.value = await invoke<string>('get_opening', {
         inputPgn: boardAPI.value?.getPgn(),
@@ -43,9 +61,14 @@ async function startStockfish() {
     <p>Opening: {{ opening }}</p>
     <p>Eval: {{ sf?.eval }}</p>
     <p class="text">Depth: {{ sf?.depth }}</p>
+    <p>Engine: {{ sf?.engineName }}</p>
     <div>
       <button @click="startStockfish">Enable Stockfish</button>
     </div>
-    <TheChessboard @move="move" @board-created="(api) => (boardAPI = api)" />
+    <TheChessboard
+      :board-config="boardConfig"
+      @move="move"
+      @board-created="(api) => (boardAPI = api)"
+    />
   </div>
 </template>
