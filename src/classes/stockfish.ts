@@ -4,6 +4,7 @@ import type { BoardApi, SquareKey } from 'vue3-chessboard';
 
 export class Stockfish {
   public engineName: string | undefined;
+  public bestMove: string | undefined;
   private startingPosition: string;
   private stockfish: Child | null = null;
   private boardApi: BoardApi;
@@ -12,11 +13,9 @@ export class Stockfish {
   public eval = ref<string>('0.00');
   public depth = ref<number | undefined>();
   public isMate = ref(false);
-  private initialPos =
-    'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
   constructor(boardApi: BoardApi) {
-    this.startingPosition = boardApi.getFen() ?? this.initialPos;
+    this.startingPosition = boardApi.getFen();
     this.boardApi = boardApi;
     this.init();
   }
@@ -52,29 +51,43 @@ export class Stockfish {
     await this.stockfish?.write(`${cmd}\n`);
   }
 
-  public async startEngine(moves: string[]) {
+  private get getMoves() {
+    return this.boardApi
+      .getHistory(true)
+      .map((move) => {
+        if (typeof move === 'object') {
+          return move.lan;
+        }
+        return move;
+      })
+      .join(' ');
+  }
+
+  public async startEngine() {
     this.sendCmd(
-      `position fen ${this.startingPosition} moves ${moves.join(' ')}`
+      `position fen ${this.startingPosition} moves ${this.getMoves}`
     );
     this.sendCmd('go depth 25');
   }
 
   public async processStdout(data: string) {
-    const parts = data.trim().split(/\s+/g);
-    if (parts[0] === 'uciok') {
+    if (data === 'uciok') {
       this.sendCmd('ucinewgame');
       this.sendCmd('isready');
-    } else if (parts[0] === 'readyok') {
-      this.startEngine([]);
-    } else if (parts[0] === 'id' && parts[1] === 'name') {
-      this.engineName = parts.slice(2).join(' ');
-    } else if (parts[0] === 'bestmove') {
+    } else if (data === 'readyok') {
+      this.sendCmd('ucinewgame');
+      this.startEngine();
+    } else if (data.startsWith('id name')) {
+      this.engineName = data.slice(8);
+    } else if (data.startsWith('bestmove')) {
+      this.bestMove = data.slice(9, 13);
       this.boardApi.drawMove(
-        parts[1].slice(0, 2) as SquareKey,
-        parts[1].slice(2, 4) as SquareKey,
+        this.bestMove.slice(0, 2) as SquareKey,
+        this.bestMove.slice(2, 4) as SquareKey,
         'paleBlue'
       );
-    } else if (parts[0] === 'info') {
+    } else if (data.startsWith('info')) {
+      const parts = data.trim().split(/\s+/g);
       for (let i = 1; i < parts.length; i++) {
         if (parts[i] === 'depth') {
           this.depth.value = parseInt(parts[++i]);
@@ -85,7 +98,8 @@ export class Stockfish {
           this.isMate.value = parts[++i] === 'mate';
         }
       }
-    } else if (parts[0] === 'Final') {
+    } else if (data.startsWith('Final')) {
+      const parts = data.trim().split(/\s+/g);
       this.eval.value = parts[2];
     }
   }

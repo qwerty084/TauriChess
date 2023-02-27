@@ -24,5 +24,6 @@ dist-ssr
 *.sw?
 
 
-src-tauri/binaries/*
-src-tauri/data/*
+src-tauri/binaries
+src-tauri/data
+src-tauri/target
