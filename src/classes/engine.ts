@@ -2,11 +2,11 @@ import { ref } from 'vue';
 import { Command, type Child } from '@tauri-apps/api/shell';
 import type { BoardApi, SquareKey } from 'vue3-chessboard';
 
-export class Stockfish {
-  public engineName: string | undefined;
+export class Engine {
+  public name: string | undefined;
   public bestMove: string | undefined;
   private startingPosition: string;
-  private stockfish: Child | null = null;
+  private child: Child | null = null;
   private boardApi: BoardApi;
   private process: Command | null = null;
   public maxDepth = 20;
@@ -24,7 +24,7 @@ export class Stockfish {
     // @TODO implement proper error handling
     try {
       this.process = Command.sidecar('binaries/stockfish');
-      this.stockfish = await this.process.spawn();
+      this.child = await this.process.spawn();
 
       this.process.stdout.addListener('data', (data) =>
         this.processStdout(data)
@@ -44,11 +44,11 @@ export class Stockfish {
   }
 
   public stop(): void {
-    this.stockfish?.kill();
+    this.child?.kill();
   }
 
   public async sendCmd(cmd: string): Promise<void> {
-    await this.stockfish?.write(`${cmd}\n`);
+    await this.child?.write(`${cmd}\n`);
   }
 
   private get getMoves() {
@@ -78,7 +78,7 @@ export class Stockfish {
       this.sendCmd('ucinewgame');
       this.startEngine();
     } else if (data.startsWith('id name')) {
-      this.engineName = data.slice(8);
+      this.name = data.slice(8);
     } else if (data.startsWith('bestmove')) {
       this.bestMove = data.slice(9, 13);
       this.boardApi.drawMove(

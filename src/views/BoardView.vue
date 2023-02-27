@@ -7,21 +7,21 @@ import {
   type BoardApi,
 } from 'vue3-chessboard';
 import { Switch } from '@headlessui/vue';
-import { Stockfish } from '@/classes/stockfish';
+import { Engine } from '@/classes/engine';
 import { getClient, type Client } from '@tauri-apps/api/http';
 
 const boardAPI = ref<BoardApi>();
 const client = ref<Client | null>(null);
-const sf = ref<Stockfish>();
+const engine = ref<Engine>();
 const engineEnabled = ref(false);
 const opening = ref('');
 const boardConfig: BoardConfig = {
   events: {
     select: () => {
-      if (sf.value?.bestMove) {
+      if (engine.value?.bestMove) {
         boardAPI.value?.drawMove(
-          sf.value?.bestMove.slice(0, 2) as SquareKey,
-          sf.value?.bestMove.slice(2, 4) as SquareKey,
+          engine.value?.bestMove.slice(0, 2) as SquareKey,
+          engine.value?.bestMove.slice(2, 4) as SquareKey,
           'paleBlue'
         );
       }
@@ -37,7 +37,7 @@ watch(engineEnabled, async (enabled) => {
   if (enabled) {
     startStockfish();
   } else {
-    sf.value?.stop();
+    engine.value?.stop();
     boardAPI.value?.hideMoves();
   }
 });
@@ -45,7 +45,7 @@ watch(engineEnabled, async (enabled) => {
 async function move() {
   boardAPI.value?.getHistory(true);
   // add small delay to keep gui responsive
-  setTimeout(() => sf.value?.startEngine(), 100);
+  setTimeout(() => engine.value?.startEngine(), 100);
 
   if (!boardAPI.value) return;
   if (boardAPI.value?.getCurrentTurnNumber() < 7) {
@@ -58,7 +58,7 @@ async function move() {
 
 async function startStockfish() {
   if (typeof boardAPI.value === 'undefined') return;
-  sf.value = new Stockfish(boardAPI.value);
+  engine.value = new Engine(boardAPI.value);
 }
 </script>
 
@@ -77,7 +77,7 @@ async function startStockfish() {
           'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2',
         ]"
       >
-        <span class="sr-only">Use setting</span>
+        <span class="sr-only">Use Engine</span>
         <span
           aria-hidden="true"
           :class="[
