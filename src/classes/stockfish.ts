@@ -71,7 +71,6 @@ export class Stockfish {
   }
 
   public async processStdout(data: string) {
-    console.log(data);
     if (data === 'uciok') {
       this.sendCmd('ucinewgame');
       this.sendCmd('isready');
@@ -100,7 +99,6 @@ export class Stockfish {
         }
       }
     } else if (data.startsWith('Final')) {
-      console.log(data);
       const parts = data.trim().split(/\s+/g);
       this.eval.value = parts[2];
     }
