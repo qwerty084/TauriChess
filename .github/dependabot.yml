@@ -4,8 +4,10 @@ updates:
     directory: '/'
     schedule:
       interval: 'daily'
+    open-pull-requests-limit: 0
 
   - package-ecosystem: 'cargo'
     directory: '/src-tauri'
     schedule:
       interval: 'daily'
+    open-pull-requests-limit: 0
