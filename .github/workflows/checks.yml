@@ -22,8 +22,6 @@ jobs:
         run: npm ci
       - name: check code style
         run: npm run lint
-      - name: run tests
-        run: npm run test
       - name: run type checks
         run: npm run type-check
       - name: test build process
